@@ -86,9 +86,9 @@ USAGE
         password = args.password
         directory = args.directory
 
-        config = gs_conf.GeoServerConfig()
+        config = gs_conf.GeoServerConfig(server, username, password)
         print config
-        pumper.pump_geoserver(config)
+        pumper.pump_geoserver(config, input_dir=directory)
 
         print "im alive"
 

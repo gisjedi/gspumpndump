@@ -86,9 +86,9 @@ USAGE
         password = args.password
         directory = args.directory
 
-        config = gs_conf.GeoServerConfig()
+        config = gs_conf.GeoServerConfig(server, username, password)
         print config
-        dumper.dump_geoserver(config)
+        dumper.dump_geoserver(config, target_dir=directory)
 
         return 0
     except KeyboardInterrupt:
