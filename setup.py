@@ -2,11 +2,11 @@
  
 from setuptools import setup, find_packages
  
-version = 0.1
+version = '0.1.3'
 
 setup(
     name = "gspumpndump",
-    install_requires = ['setuptools', 'requests', 'lxml'],
+    install_requires = ['setuptools', 'requests'],
     packages = find_packages(),
     package_data = {
         # If any package contains *.conf files, include them:

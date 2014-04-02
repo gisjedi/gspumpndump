@@ -6,9 +6,9 @@ import logging
 import logging.config
 import mimetypes
 import os
+import xml.etree.ElementTree as et
 
 import requests
-import lxml.etree as et
 
 dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 logging.config.fileConfig(os.path.join(dir, 'logging.conf'))
@@ -82,6 +82,9 @@ def pump_workspace(gs_conf, workspace, input_dir):
     logger.debug('beginning workspace %s pump with config %s from %s',
                  workspace, gs_conf, input_dir)
 
+    # pump styles first so that any dependent featuretypes can be associated
+    pump_styles(gs_conf, workspace, input_dir)
+
     # pump workspace
     workspace_url = '/workspaces'
     namespace_url = '/namespaces'
@@ -100,9 +103,6 @@ def pump_workspace(gs_conf, workspace, input_dir):
 
     templates_url = '{0}/{1}/templates'.format(workspace_url, workspace)
     pump_templates(gs_conf, templates_url, input_dir)
-
-    pump_styles(gs_conf, workspace, input_dir)
-
 
 def pump_datastore(gs_conf, datastore, workspace, input_dir):
     logger.debug('beginning datastore %s pump to workspace %s with config %s from %s',
@@ -233,8 +233,8 @@ def purify_xml(input_xml_string):
     """Traverse xml tree and remove any problematic elements from xml document
 
     Removes all atom:link elements and their parents from xml document.  This is necessary when inserting workspaces and
-    datastores that have references to child featuretypes/etc. that have not be created yet.  These links are recreated
-    by GeoServer once the child featuretypes/etc. are POSTed.
+    datastores that have references to child featuretypes/etc. that have not been created yet.
+    These links are recreated by GeoServer once the child featuretypes/etc. are POSTed.
 
     :param input_xml_string: string of valid xml
     :return: purified string containing xml document
@@ -242,16 +242,16 @@ def purify_xml(input_xml_string):
 
     root = et.fromstring(input_xml_string)
 
-    links = []
-    for element in root.iter():
-        if isinstance(element.tag, basestring):
-            if 'Atom}link' in element.tag:
-                links.append(element.getparent())
+    namespace = "{http://www.w3.org/2005/Atom}"
+    search = './/{0}link'.format(namespace)
 
-    for link in links:
-        parent = link.getparent()
-        if parent is not None:
-            parent.remove(link)
+    # Use xpath to get all parents of link
+    link_parents = root.findall(search + '/..')
+    for parent in link_parents:
+        # Still have to find and iterate through child links
+        if len(parent.findall(search)):
+            logger.debug(parent.tag + ' tag removed')
+            root.remove(parent)
 
     return et.tostring(root)
 
@@ -337,6 +337,7 @@ def get_subdirectories(input_dir):
         directory_names = [
             d for d in os.listdir(input_dir)
             if os.path.isdir(os.path.join(input_dir, d))
+            and not '.svn' in d
         ]
     except OSError:
         directory_names = []

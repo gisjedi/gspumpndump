@@ -90,8 +90,6 @@ USAGE
         print config
         pumper.pump_geoserver(config, input_dir=directory)
 
-        print "im alive"
-
         return 0
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
