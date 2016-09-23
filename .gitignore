@@ -1,0 +1,8 @@
+# Compiled python
+*.pyc
+
+# Project files
+.idea
+
+# Test data
+data
