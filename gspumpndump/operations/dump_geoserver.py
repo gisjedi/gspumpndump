@@ -30,7 +30,7 @@ def dump_geoserver(gs_conf, target_dir='data', debug=False):
     # dump global templates
     dump_templates(gs_conf, target_dir=os.path.join(target_dir, 'workspaces'))
 
-    # dump workspaced layergroups
+    # dump global layergroups
     dump_layergroups(gs_conf)
 
 
@@ -122,7 +122,7 @@ def dump_coverage(gs_conf, coverage, coveragestore, workspace, target_dir):
     layer_url = '/layers/{0}.{1}'.format(coverage, DUMP_FORMAT)
 
     target_path = os.path.join(target_dir, 'workspaces/{0}/coveragestores/{1}/coverages/{2}'
-                         .format(workspace, coveragestore, coverage))
+                               .format(workspace, coveragestore, coverage))
     save_response_to_file(gs_conf, coverage_url + '.' + DUMP_FORMAT,
                           os.path.join(target_path, 'coverage.' + DUMP_FORMAT))
     save_response_to_file(gs_conf, layer_url, os.path.join(target_path, 'layer.' + DUMP_FORMAT))
@@ -164,7 +164,7 @@ def dump_featuretype(gs_conf, featuretype, datastore, workspace, target_dir):
     layer_url = '/layers/{0}.{1}'.format(featuretype, DUMP_FORMAT)
 
     target_path = os.path.join(target_dir, 'workspaces/{0}/datastores/{1}/featuretypes/{2}'
-                         .format(workspace, datastore, featuretype))
+                               .format(workspace, datastore, featuretype))
     save_response_to_file(gs_conf, featuretype_url + '.' + DUMP_FORMAT,
                           os.path.join(target_path, 'featuretype.' + DUMP_FORMAT))
     save_response_to_file(gs_conf, layer_url, os.path.join(target_path, 'layer.' + DUMP_FORMAT))
@@ -217,7 +217,7 @@ def dump_styles(gs_conf, workspace=None, target_dir='data'):
         sld_url = '{0}/styles/{1}.sld'.format(workspace_prefix, style)
         target_path = os.path.join(target_dir, 'styles')
         save_response_to_file(gs_conf, style_url, os.path.join(target_path, '{0}.{1}'.format(style, DUMP_FORMAT)))
-        save_response_to_file(gs_conf, sld_url, os.path.join(target_path, style + '.sld'))
+        save_response_to_file(gs_conf, sld_url, os.path.join(target_path, '%s.sld' % style))
 
 
 def retrieve_value_from_iterable_from_json(gs_conf, relative_url, tag_singular):
@@ -300,5 +300,3 @@ def save_response_to_file(gs_conf, relative_url, target_file):
     file_handle = open(target_file, mode='w')
     file_handle.write(r.text)
     file_handle.close()
-
-

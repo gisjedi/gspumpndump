@@ -4,7 +4,8 @@ import logging
 import logging.config
 import mimetypes
 import os
-import xml.etree.ElementTree as et
+
+from xml.etree import ElementTree
 
 import requests
 
@@ -32,6 +33,9 @@ def pump_geoserver(gs_conf, input_dir='data', debug=False):
     # pump global templates
     pump_templates(gs_conf, input_dir=os.path.join(input_dir, 'workspaces'))
 
+    # pump global layergroups
+    pump_layergroups(gs_conf)
+
 
 def pump_styles(gs_conf, workspace=None, input_dir='data'):
     logger.debug('beginning styles pump from %s with config %s to workspace %s',
@@ -52,6 +56,22 @@ def pump_styles(gs_conf, workspace=None, input_dir='data'):
     for sld in slds:
         logger.debug('sld: %s in %s', sld, input_path)
         push_input_to_geoserver(gs_conf, target_url, sld, input_path, put_only=True)
+
+
+def pump_layergroups(gs_conf, workspace=None, input_dir='data'):
+    logger.debug('beginning layergroups pump from %s with config %s to workspace %s',
+                 input_dir, gs_conf, workspace)
+
+    target_url = '/layergroups'
+    if workspace is not None:
+        target_url = '/workspaces/{0}/layergroups'.format(workspace)
+
+    input_path = os.path.join(input_dir, 'layergroups')
+
+    layergroups = get_files(input_path)
+    for layergroup in layergroups:
+        logger.debug('layergroup: %s in %s', layergroup, input_path)
+        push_input_to_geoserver(gs_conf, target_url, layergroup, input_path)
 
 
 def pump_templates(gs_conf, parent_url=None, input_dir='data/workspaces'):
@@ -105,6 +125,10 @@ def pump_workspace(gs_conf, workspace, input_dir):
 
     templates_url = '{0}/{1}/templates'.format(workspace_url, workspace)
     pump_templates(gs_conf, templates_url, input_dir)
+
+    # pump workspacesd layergroups
+    pump_layergroups(gs_conf, workspace, input_dir)
+
 
 def pump_datastore(gs_conf, datastore, workspace, input_dir):
     logger.debug('beginning datastore %s pump to workspace %s with config %s from %s',
@@ -165,7 +189,6 @@ def push_input_to_geoserver(gs_conf, relative_url, object_name, input_path,
     if input_file is None:
         input_file = object_name
 
-    data = ""
     mimetype = mimetypes.guess_type(input_file)[0]
     with open(os.path.join(input_path, input_file), 'r') as file_handle:
         data = file_handle.read()
@@ -242,7 +265,7 @@ def purify_xml(input_xml_string):
     :return: purified string containing xml document
     """
 
-    root = et.fromstring(input_xml_string)
+    root = ElementTree.fromstring(input_xml_string)
 
     namespace = "{http://www.w3.org/2005/Atom}"
     search = './/{0}link'.format(namespace)
@@ -255,7 +278,7 @@ def purify_xml(input_xml_string):
             logger.debug(parent.tag + ' tag removed')
             root.remove(parent)
 
-    return et.tostring(root)
+    return ElementTree.tostring(root)
 
 
 def get_template_file_names_iterable(input_dir):
@@ -306,7 +329,7 @@ def get_subdirectories_excluding_string(input_dir, string):
     """
     directory_names = [
         d for d in get_subdirectories(input_dir)
-        if not string in d
+        if string not in d
     ]
 
     return directory_names
@@ -339,7 +362,7 @@ def get_subdirectories(input_dir):
         directory_names = [
             d for d in os.listdir(input_dir)
             if os.path.isdir(os.path.join(input_dir, d))
-            and not '.svn' in d
+            and '.svn' not in d
         ]
     except OSError:
         directory_names = []
