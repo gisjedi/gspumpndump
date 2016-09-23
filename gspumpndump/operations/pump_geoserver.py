@@ -92,7 +92,7 @@ def pump_workspace(gs_conf, workspace, input_dir):
     push_input_to_geoserver(gs_conf, workspace_url, workspace + '.xml', input_dir, 'workspace.xml',
                             del_params={'recurse': 'true'}, purify=True)
     push_input_to_geoserver(gs_conf, namespace_url, workspace + '.xml', input_dir, 'namespace.xml',
-                            purify=True)
+                            purify=True, put_only=True)
 
     # Push datastores
     datastores = get_subdirectories(os.path.join(input_dir, 'datastores'))
