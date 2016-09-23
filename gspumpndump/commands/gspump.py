@@ -5,7 +5,7 @@
 
 @author:     Jonathan Meyer
 
-@copyright:  2014 Applied Information Sciences. All rights reserved.
+@copyright:  2016 Applied Information Sciences. All rights reserved.
 
 @contact:    jon@gisjedi.com
 @deffield    updated: Updated
@@ -23,9 +23,8 @@ from argparse import RawDescriptionHelpFormatter
 __all__ = []
 __version__ = 0.1
 __date__ = '2014-03-18'
-__updated__ = '2014-03-18'
+__updated__ = '2016-09-22'
 
-DEBUG = 1
 
 class CLIError(Exception):
     '''Generic exception to raise and log different fatal errors.'''
@@ -53,7 +52,7 @@ def main(argv=None): # IGNORE:C0111
     program_license = '''%s
 
   Created by Jonathan Meyer on %s.
-  Copyright 2014 Applied Information Sciences. All rights reserved.
+  Copyright 2016 Applied Information Sciences. All rights reserved.
 
   Licensed under the Apache License 2.0
   http://www.apache.org/licenses/LICENSE-2.0
@@ -76,6 +75,7 @@ USAGE
         parser.add_argument("-d", "--directory", dest="directory", default="data",
                             help="relative path to directory containing GeoServer configuration data. "
                                  "[default: %(default)s]")
+        parser.add_argument('-D', '--debug', action='store_true', default=False)
         parser.add_argument('-V', '--version', action='version', version=program_version_message)
 
         # Process arguments
@@ -88,7 +88,7 @@ USAGE
 
         config = gs_conf.GeoServerConfig(server, username, password)
         print config
-        pumper.pump_geoserver(config, input_dir=directory)
+        pumper.pump_geoserver(config, input_dir=directory, debug=args.debug)
 
         return 0
     except KeyboardInterrupt:

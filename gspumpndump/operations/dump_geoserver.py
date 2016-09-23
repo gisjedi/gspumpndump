@@ -1,20 +1,23 @@
 from __future__ import unicode_literals
 
-__author__ = 'Jonathan.Meyer'
-
 import logging
 import logging.config
 import requests
 import os
 
-dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-logging.config.fileConfig(os.path.join(dir, 'logging.conf'))
+script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+logging.config.fileConfig(os.path.join(script_dir, 'logging.conf'))
 logger = logging.getLogger(__name__)
 
 PARSE_FORMAT = 'json'
 DUMP_FORMAT = 'xml'
 
-def dump_geoserver(gs_conf, target_dir='data'):
+
+def dump_geoserver(gs_conf, target_dir='data', debug=False):
+    # Set logger to debug when enabled
+    if debug:
+        logger.setLevel(logging.DEBUG)
+
     logger.debug('beginning GeoServer dump with config %s to %s',
                  gs_conf, target_dir)
 
@@ -26,6 +29,7 @@ def dump_geoserver(gs_conf, target_dir='data'):
 
     # dump global templates
     dump_templates(gs_conf, target_dir=os.path.join(target_dir, 'workspaces'))
+
 
 def dump_workspaces(gs_conf, target_dir='data'):
     logger.debug('beginning workspaces dump with config %s to %s',
@@ -67,6 +71,7 @@ def dump_workspace(gs_conf, workspace, target_dir='data'):
     dump_templates(gs_conf, workspace_url, target_path)
 
     dump_styles(gs_conf, workspace, target_path)
+
 
 def dump_datastore(gs_conf, datastore, workspace, target_dir):
     logger.debug('beginning datastore %s dump from workspace %s with config %s to %s',
@@ -141,6 +146,7 @@ def dump_styles(gs_conf, workspace=None, target_dir='data'):
         save_response_to_file(gs_conf, style_url, os.path.join(target_path, '{0}.{1}'.format(style, DUMP_FORMAT)))
         save_response_to_file(gs_conf, sld_url, os.path.join(target_path, style + '.sld'))
 
+
 def retrieve_value_from_iterable_from_json(gs_conf, relative_url, tag_singular):
     """Attempts to retrieve an iterable result parsed from GeoServer rest config endpoint at the relative url
 
@@ -151,6 +157,7 @@ def retrieve_value_from_iterable_from_json(gs_conf, relative_url, tag_singular):
     """
 
     return retrieve_iterable_from_json(gs_conf, relative_url, tag_singular, key_from_iterable='name')
+
 
 def retrieve_iterable_from_json(gs_conf, relative_url, tag_singular, key_from_iterable=None):
     """Attempts to retrieve an iterable result parsed from GeoServer rest config endpoint at the relative url
@@ -185,6 +192,7 @@ def retrieve_iterable_from_json(gs_conf, relative_url, tag_singular, key_from_it
 
     return iterable
 
+
 def retrieve_json_from_url(gs_conf, relative_url):
     """
 
@@ -198,6 +206,7 @@ def retrieve_json_from_url(gs_conf, relative_url):
 
     response_json = r.json()
     return response_json
+
 
 def save_response_to_file(gs_conf, relative_url, target_file):
     url = gs_conf.geoserver_admin_url + relative_url

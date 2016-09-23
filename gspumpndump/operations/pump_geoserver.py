@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-__author__ = 'Jonathan.Meyer'
-
 import logging
 import logging.config
 import mimetypes
@@ -10,8 +8,8 @@ import xml.etree.ElementTree as et
 
 import requests
 
-dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-logging.config.fileConfig(os.path.join(dir, 'logging.conf'))
+script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+logging.config.fileConfig(os.path.join(script_dir, 'logging.conf'))
 logger = logging.getLogger(__name__)
 
 # Setup mimetypes for SLD and FTL so it can be auto-detected when pushing data
@@ -20,7 +18,11 @@ mimetypes.add_type('application/vnd.ogc.sld+xml', '.sld')
 mimetypes.add_type('application/html', '.ftl')
 
 
-def pump_geoserver(gs_conf, input_dir='data'):
+def pump_geoserver(gs_conf, input_dir='data', debug=False):
+    # Set logger to debug when enabled
+    if debug:
+        logger.setLevel(logging.DEBUG)
+
     # pump global styles
     pump_styles(gs_conf, None, input_dir)
 
