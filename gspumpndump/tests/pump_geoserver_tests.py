@@ -63,3 +63,5 @@ class PumpGeoServerTest(unittest.TestCase):
 
         self.assertEqual(output_workspace_xml,
                          pumper.purify_xml(input_workspace_xml))
+
+# TODO: test warning when encountering encrypted passwords

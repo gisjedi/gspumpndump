@@ -1,5 +1,3 @@
-__author__ = 'Jonathan.Meyer'
-
 import requests
 
 
