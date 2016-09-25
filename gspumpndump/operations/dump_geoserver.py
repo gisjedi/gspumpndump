@@ -99,7 +99,7 @@ def dump_coveragestore(gs_conf, coveragestore, workspace, target_dir):
     coveragestore_url = '/workspaces/{0}/coveragestores/{1}'.format(workspace, coveragestore)
 
     save_response_to_file(gs_conf,
-                          '{0}/coveragestore.{1}'.format(coveragestore_url, DUMP_FORMAT),
+                          '{0}.{1}'.format(coveragestore_url, DUMP_FORMAT),
                           '{0}/coveragestore.{1}'.format(coveragestore_path, DUMP_FORMAT))
 
     # dump coverages
@@ -118,7 +118,7 @@ def dump_coverage(gs_conf, coverage, coveragestore, workspace, target_dir):
     logger.debug('beginning coverage %s dump from coveragestore %s from workspace %s with config %s to %s',
                  coverage, coveragestore, workspace, gs_conf, target_dir)
 
-    coverage_url = '/workspaces/{0}/coveragestores/{1}/coverage/{2}'.format(workspace, coveragestore, coverage)
+    coverage_url = '/workspaces/{0}/coveragestores/{1}/coverages/{2}'.format(workspace, coveragestore, coverage)
     layer_url = '/layers/{0}.{1}'.format(coverage, DUMP_FORMAT)
 
     target_path = os.path.join(target_dir, 'workspaces/{0}/coveragestores/{1}/coverages/{2}'
@@ -141,7 +141,7 @@ def dump_datastore(gs_conf, datastore, workspace, target_dir):
     datastore_url = '/workspaces/{0}/datastores/{1}'.format(workspace, datastore)
 
     save_response_to_file(gs_conf,
-                          '{0}/datastore.{1}'.format(datastore_url, DUMP_FORMAT),
+                          '{0}.{1}'.format(datastore_url, DUMP_FORMAT),
                           '{0}/datastore.{1}'.format(datastore_path, DUMP_FORMAT))
 
     # dump featuretypes
