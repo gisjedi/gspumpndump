@@ -4,7 +4,8 @@ import logging
 import logging.config
 import mimetypes
 import os
-import xml.etree.ElementTree as et
+
+from xml.etree import ElementTree
 
 import requests
 
@@ -32,6 +33,9 @@ def pump_geoserver(gs_conf, input_dir='data', debug=False):
     # pump global templates
     pump_templates(gs_conf, input_dir=os.path.join(input_dir, 'workspaces'))
 
+    # pump global layergroups
+    pump_layergroups(gs_conf)
+
 
 def pump_styles(gs_conf, workspace=None, input_dir='data'):
     logger.debug('beginning styles pump from %s with config %s to workspace %s',
@@ -52,6 +56,22 @@ def pump_styles(gs_conf, workspace=None, input_dir='data'):
     for sld in slds:
         logger.debug('sld: %s in %s', sld, input_path)
         push_input_to_geoserver(gs_conf, target_url, sld, input_path, put_only=True)
+
+
+def pump_layergroups(gs_conf, workspace=None, input_dir='data'):
+    logger.debug('beginning layergroups pump from %s with config %s to workspace %s',
+                 input_dir, gs_conf, workspace)
+
+    target_url = '/layergroups'
+    if workspace is not None:
+        target_url = '/workspaces/{0}/layergroups'.format(workspace)
+
+    input_path = os.path.join(input_dir, 'layergroups')
+
+    layergroups = get_files(input_path)
+    for layergroup in layergroups:
+        logger.debug('layergroup: %s in %s', layergroup, input_path)
+        push_input_to_geoserver(gs_conf, target_url, layergroup, input_path)
 
 
 def pump_templates(gs_conf, parent_url=None, input_dir='data/workspaces'):
@@ -96,15 +116,68 @@ def pump_workspace(gs_conf, workspace, input_dir):
     push_input_to_geoserver(gs_conf, namespace_url, workspace + '.xml', input_dir, 'namespace.xml',
                             purify=True, put_only=True)
 
-    # Push datastores
+    # pump datastores
     datastores = get_subdirectories(os.path.join(input_dir, 'datastores'))
 
     for datastore in datastores:
         pump_datastore(gs_conf, datastore, workspace,
                        os.path.join(os.path.join(input_dir, 'datastores'), datastore))
 
+    # pump coveragestores
+    coveragestores = get_subdirectories(os.path.join(input_dir, 'coveragestores'))
+
+    for coveragestore in coveragestores:
+        pump_coveragestore(gs_conf, coveragestore, workspace,
+                       os.path.join(os.path.join(input_dir, 'coveragestores'), coveragestore))
+
+    # pump workspacesd layergroups
+    pump_layergroups(gs_conf, workspace, input_dir)
+
+    # pump workspaced templates
     templates_url = '{0}/{1}/templates'.format(workspace_url, workspace)
     pump_templates(gs_conf, templates_url, input_dir)
+
+
+def pump_coveragestore(gs_conf, coveragestore, workspace, input_dir):
+    logger.debug('beginning coveragestore %s pump to workspace %s with config %s from %s',
+                 coveragestore, workspace, gs_conf, input_dir)
+
+    # pump datastore
+    coveragestore_url = '/workspaces/{0}/coveragestores'.format(workspace)
+
+    push_input_to_geoserver(gs_conf, coveragestore_url, coveragestore + '.xml', input_dir, 'coveragestore.xml',
+                            del_params={'recurse': 'true'}, purify=True)
+
+    # pump associated coverages
+    coverages_dir = os.path.join(input_dir, 'coverages')
+    coverages = get_subdirectories(coverages_dir)
+
+    for coverage in coverages:
+        pump_coverage(gs_conf, coverage, coveragestore, workspace,
+                      os.path.join(coverages_dir, coverage))
+
+    # pump coveragestore level templates
+    templates_url = '{0}/{1}/templates' \
+                    ''.format(coveragestore_url, coveragestore)
+    pump_templates(gs_conf, templates_url, input_dir)
+
+
+def pump_coverage(gs_conf, coverage, coveragestore, workspace, input_dir):
+    logger.debug('beginning coverage %s pump into coveragestore %s in workspace %s with config %s from %s',
+                 coverage, coveragestore, workspace, gs_conf, input_dir)
+
+    coverages_url = '/workspaces/{0}/coveragestores/{1}/coverages'.format(workspace, coveragestore)
+    layers_url = '/layers'
+
+    push_input_to_geoserver(gs_conf, coverages_url, coverage + '.xml', input_dir, 'coverage.xml',
+                            purify=True)
+    push_input_to_geoserver(gs_conf, layers_url, coverage + '.xml', input_dir, 'layer.xml',
+                            purify=False, put_only=True)
+
+    # pump coverage level templates
+    templates_url = '{0}/{1}/templates'.format(coverages_url, coverage)
+    pump_templates(gs_conf, templates_url, input_dir)
+
 
 def pump_datastore(gs_conf, datastore, workspace, input_dir):
     logger.debug('beginning datastore %s pump to workspace %s with config %s from %s',
@@ -124,6 +197,7 @@ def pump_datastore(gs_conf, datastore, workspace, input_dir):
         pump_featuretype(gs_conf, featuretype, datastore, workspace,
                          os.path.join(featuretypes_dir, featuretype))
 
+    # pump datastore level templates
     templates_url = '{0}/{1}/templates' \
                     ''.format(datastore_url, datastore)
     pump_templates(gs_conf, templates_url, input_dir)
@@ -165,7 +239,6 @@ def push_input_to_geoserver(gs_conf, relative_url, object_name, input_path,
     if input_file is None:
         input_file = object_name
 
-    data = ""
     mimetype = mimetypes.guess_type(input_file)[0]
     with open(os.path.join(input_path, input_file), 'r') as file_handle:
         data = file_handle.read()
@@ -177,6 +250,7 @@ def push_input_to_geoserver(gs_conf, relative_url, object_name, input_path,
     logger.info("Pushing object '%s' file '%s' from '%s' to endpoint '%s'", object_name, input_file, input_path, url)
 
     # Used for pushing layers and templates as there is no supported POST operation
+    # Also used for namespace updates to workspaces
     if put_only:
         r = requests.get(curr_url,
                          auth=(gs_conf.username, gs_conf.password))
@@ -195,6 +269,8 @@ def push_input_to_geoserver(gs_conf, relative_url, object_name, input_path,
             logger.debug("PUT successful")
         else:
             logger.error("Error pushing data: %s, %s", r.status_code, r.text)
+            logger.debug('\nRequest URL: %s\nRequest Headers: %s\nRequest Body:\n%s\nResponse Body:\n%s' %
+                         (r.request.url, r.request.headers, r.request.body, r.text))
     # Used for pushing all other types of data
     else:
         r = requests.get(curr_url,
@@ -217,6 +293,8 @@ def push_input_to_geoserver(gs_conf, relative_url, object_name, input_path,
         elif r.status_code == requests.codes.forbidden or r.status_code == requests.codes.server_error:
             # Cannot post, assume existing was not deleted, attempt update
             logger.debug("Unable to POST, assuming existing un-deleted, attempting to PUT")
+            logger.debug('\nRequest URL: %s\nRequest Headers: %s\nRequest Body:\n%s\nResponse Body:\n%s' %
+                         (r.request.url, r.request.headers, r.request.body, r.text))
             r = requests.put(curr_url,
                              data=data,
                              headers={'Content-type': mimetype},
@@ -227,35 +305,38 @@ def push_input_to_geoserver(gs_conf, relative_url, object_name, input_path,
                 logger.debug("PUT successful")
             else:
                 logger.error("Error pushing data: %s, %s", r.status_code, r.text)
+                logger.debug('\nRequest URL: %s\nRequest Headers: %s\nRequest Body:\n%s\nResponse Body:\n%s' %
+                             (r.request.url, r.request.headers, r.request.body, r.text))
         elif r.status_code != requests.codes.ok:
             logger.error("Error pushing data: %s, %s", r.status_code, r.text)
+            logger.debug('\nRequest URL: %s\nRequest Headers: %s\nRequest Body:\n%s\nResponse Body:\n%s' %
+                         (r.request.url, r.request.headers, r.request.body, r.text))
 
 
 def purify_xml(input_xml_string):
     """Traverse xml tree and remove any problematic elements from xml document
 
-    Removes all atom:link elements and their parents from xml document.  This is necessary when inserting workspaces and
-    datastores that have references to child featuretypes/etc. that have not been created yet.
-    These links are recreated by GeoServer once the child featuretypes/etc. are POSTed.
+    Removes all atom:link elements from xml document.  This is necessary when inserting workspaces datastores and
+    coveragestores that have references to child featuretypes/etc. that have not been created yet.
+    These links are recreated by GeoServer once the child objects are POSTed.
 
     :param input_xml_string: string of valid xml
     :return: purified string containing xml document
     """
 
-    root = et.fromstring(input_xml_string)
+    root = ElementTree.fromstring(input_xml_string)
 
     namespace = "{http://www.w3.org/2005/Atom}"
     search = './/{0}link'.format(namespace)
 
-    # Use xpath to get all parents of link
-    link_parents = root.findall(search + '/..')
-    for parent in link_parents:
-        # Still have to find and iterate through child links
-        if len(parent.findall(search)):
-            logger.debug(parent.tag + ' tag removed')
-            root.remove(parent)
+    # Use xpath to get Atom links
+    for parent in root.findall(search + '/..'):
+        elements = parent.findall(search)
+        for element in elements:
+            parent.remove(element)
+            logger.debug(element.tag + ' tag removed')
 
-    return et.tostring(root)
+    return ElementTree.tostring(root)
 
 
 def get_template_file_names_iterable(input_dir):
@@ -306,7 +387,7 @@ def get_subdirectories_excluding_string(input_dir, string):
     """
     directory_names = [
         d for d in get_subdirectories(input_dir)
-        if not string in d
+        if string not in d
     ]
 
     return directory_names
@@ -339,7 +420,7 @@ def get_subdirectories(input_dir):
         directory_names = [
             d for d in os.listdir(input_dir)
             if os.path.isdir(os.path.join(input_dir, d))
-            and not '.svn' in d
+            and '.svn' not in d
         ]
     except OSError:
         directory_names = []
