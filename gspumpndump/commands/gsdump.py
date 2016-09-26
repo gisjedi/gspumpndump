@@ -86,14 +86,14 @@ USAGE
         directory = args.directory
 
         config = gs_conf.GeoServerConfig(server, username, password)
-        print config
+        print(config)
         dumper.dump_geoserver(config, target_dir=directory, debug=args.debug)
 
         return 0
     except KeyboardInterrupt:
         ### handle keyboard interrupt ###
         return 0
-    except Exception, e:
+    except Exception as e:
         indent = len(program_name) * " "
         sys.stderr.write(program_name + ": " + repr(e) + "\n")
         sys.stderr.write(indent + "  for help use --help")

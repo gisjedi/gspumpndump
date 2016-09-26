@@ -1,5 +1,3 @@
-__author__ = 'Jonathan.Meyer'
-
 import unittest
 import gspumpndump.operations.dump_geoserver as dumper
 import gspumpndump.config.geoserver_config as gs_conf
