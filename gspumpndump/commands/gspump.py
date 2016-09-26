@@ -17,13 +17,12 @@ import os
 import gspumpndump.operations.pump_geoserver as pumper
 import gspumpndump.config.geoserver_config as gs_conf
 
+from gspumpndump import __version__, __date__, __updated__
+
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
 __all__ = []
-__version__ = 0.1
-__date__ = '2014-03-18'
-__updated__ = '2016-09-22'
 
 
 class CLIError(Exception):

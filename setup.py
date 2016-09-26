@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
  
 from setuptools import setup, find_packages
+
+from gspumpndump import __version__
  
-version = '0.1.5'
+version = __version__
 
 setup(
     name = "gspumpndump",

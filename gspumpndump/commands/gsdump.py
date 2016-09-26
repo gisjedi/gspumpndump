@@ -17,13 +17,12 @@ import os
 import gspumpndump.operations.dump_geoserver as dumper
 import gspumpndump.config.geoserver_config as gs_conf
 
+from gspumpndump import __version__, __date__, __updated__
+
 from argparse import ArgumentParser
 from argparse import RawDescriptionHelpFormatter
 
 __all__ = []
-__version__ = 0.1
-__date__ = '2014-03-18'
-__updated__ = '2016-09-22'
 
 
 class CLIError(Exception):
@@ -52,7 +51,7 @@ def main(argv=None): # IGNORE:C0111
     program_license = '''%s
 
   Created by Jonathan Meyer on %s.
-  Copyright 2014 Applied Information Sciences. All rights reserved.
+  Copyright 2016 Applied Information Sciences. All rights reserved.
 
   Licensed under the Apache License 2.0
   http://www.apache.org/licenses/LICENSE-2.0
