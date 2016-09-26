@@ -6,3 +6,8 @@
 
 # Test data
 data
+
+# Build dirs
+dist
+build
+*.egg-info
