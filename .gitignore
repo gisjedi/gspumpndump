@@ -6,6 +6,7 @@
 
 # Test data
 data
+.coverage
 
 # Build dirs
 dist
